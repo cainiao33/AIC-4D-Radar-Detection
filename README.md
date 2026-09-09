@@ -1,11 +1,15 @@
-# SFA4D 毫米波雷达与单目摄像头融合算法国二开源方案
+# SFA4D — 4D 毫米波雷达 + 单目相机融合 3D 检测
 
-> 🏆 **2025年 AIC 全球校园人工智能算法精英大赛 · 算法挑战赛 — 4D毫米波雷达和单目摄像头的融合算法** — 全国二等奖开源方案
+> **一句话**：4D 毫米波雷达 + 单目相机的 3D 目标检测——在 SFA3D 基础上做 8D→4D 点云映射、KFPN 特征融合、无锚点检测头
+> **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· ONNX 量化后 13 MB
+> **怎么跑**：`sample_data/` 自带 3 个样本；训练 / 推理 / 可视化指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0](https://img.shields.io/badge/PyTorch-2.0-red.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![AIC Competition](https://img.shields.io/badge/AIC-2025-green.svg)]()
+
+<p align="center"><img src="demo/preview.gif" alt="SFA4D BEV 检测效果演示" width="640"></p>
 
 ---
 
