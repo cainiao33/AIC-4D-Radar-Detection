@@ -1,3 +1,12 @@
+"""
+# -*- coding: utf-8 -*-
+-----------------------------------------------------------------------------------
+# Author: Nguyen Mau Dung
+# DoC: 2020.08.17
+# email: nguyenmaudung93.kstn@gmail.com
+-----------------------------------------------------------------------------------
+# Description: Demonstration script for both front view and back view
+"""
 import sys
 import os
 import warnings

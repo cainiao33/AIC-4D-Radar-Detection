@@ -1,10 +1,12 @@
 """
 # -*- coding: utf-8 -*-
 -----------------------------------------------------------------------------------
+# Author: Nguyen Mau Dung
+# DoC: 2020.08.17
+# email: nguyenmaudung93.kstn@gmail.com
 -----------------------------------------------------------------------------------
 # Description: The utils of the kitti dataset
 """
-
 from __future__ import print_function
 import os
 import sys

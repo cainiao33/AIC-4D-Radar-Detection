@@ -2,7 +2,7 @@
 
 > **一句话**：基于 SFA3D 的 4D 毫米波雷达点云 3D 检测——原创 8D→4D SNR 映射与跨类别 NMS，网络结构沿用 SFA3D 原版
 > **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· ONNX 量化后 13 MB
-> **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) 下载）；数据集需自备。指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)，或直接用 [Docker](#-docker-复现)
+> **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) 下载）；数据集需自备。指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)，或直接用 [Docker](#-docker-复现)
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0](https://img.shields.io/badge/PyTorch-2.0-red.svg)](https://pytorch.org/)
@@ -211,8 +211,8 @@ docker run --gpus all \
 
 | 模型 | 大小 | 说明 | 获取 |
 |------|------|------|------|
-| Epoch 163（PyTorch） | 48.57 MB | 推荐使用的最佳模型 | ✅ 仓库内 `checkpoints/sfa3d_8d_full_300epochs/`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
-| ONNX FP32 | 48.57 MB | 跨平台部署（CPU 可跑） | ✅ 仓库内 `onnx_models/sfa3d_163_fp32.onnx`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
+| Epoch 163（PyTorch） | 48.57 MB | 推荐使用的最佳模型 | ✅ 仓库内 `checkpoints/sfa3d_8d_full_300epochs/`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) |
+| ONNX FP32 | 48.57 MB | 跨平台部署（CPU 可跑） | ✅ 仓库内 `onnx_models/sfa3d_163_fp32.onnx`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) |
 | INT8 动态量化 ONNX | 12.27 MB | 边缘设备部署 | ✅ 仓库内 `quantized_models/sfa3d_163_int8.onnx` |
 
 ### 模型导出
@@ -282,15 +282,15 @@ python sfa/quantize_onnx_163.py \
 
 **GIF 自动播放预览（2分钟完整演示）：**
 
-<img src="https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/raw/main/demo/preview_120s.gif" width="800" alt="SFA4D 检测效果完整演示">
+<img src="https://github.com/cainiao33/AIC-4D-Radar-Detection/raw/main/demo/preview_120s.gif" width="800" alt="SFA4D 检测效果完整演示">
 
-> 2分钟完整检测演示（3fps，400px宽）。如加载较慢，可观看下方视频或访问 [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0)。
+> 2分钟完整检测演示（3fps，400px宽）。如加载较慢，可观看下方视频或访问 [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0)。
 
 **点击播放完整视频（更高画质）：**
 
-<video src="https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/download/v1.0/visualization_12fps.mp4" controls width="100%" poster="demo/000000_final.png"></video>
+<video src="https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/download/v1.0/visualization_12fps.mp4" controls width="100%" poster="demo/000000_final.png"></video>
 
-> 完整演示视频（含 OpenCV 渲染）请访问 [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0)。
+> 完整演示视频（含 OpenCV 渲染）请访问 [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0)。
 
 ---
 

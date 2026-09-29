@@ -1,10 +1,12 @@
 """
 # -*- coding: utf-8 -*-
 -----------------------------------------------------------------------------------
+# Author: Nguyen Mau Dung
+# DoC: 2020.08.17
+# email: nguyenmaudung93.kstn@gmail.com
 -----------------------------------------------------------------------------------
 # Description: This script for creating the dataloader for training/validation/test phase
 """
-
 import os
 import sys
 
