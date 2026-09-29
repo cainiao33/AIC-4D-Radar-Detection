@@ -1,8 +1,8 @@
 # SFA4D — 4D mmWave Radar Point-Cloud 3D Object Detection (based on SFA3D)
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/🇨🇳_语言-中文-red?style=for-the-badge" alt="中文"></a>
-  <a href="README_en.md"><img src="https://img.shields.io/badge/🇬🇧_Language-English-blue?style=for-the-badge" alt="English"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/Switch_Language-简体中文-red?style=for-the-badge" alt="简体中文"></a>
+  <a href="README_en.md"><img src="https://img.shields.io/badge/Switch_Language-English-blue?style=for-the-badge" alt="English"></a>
 </p>
 
 > **One-liner**: 3D detection on 4D mmWave radar point clouds built on SFA3D — original 8D→4D SNR mapping and cross-class NMS; the network architecture is unchanged from SFA3D.

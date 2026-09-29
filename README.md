@@ -1,8 +1,8 @@
 # SFA4D — 4D 毫米波雷达点云 3D 目标检测（基于 SFA3D）
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/🇨🇳_语言-中文-red?style=for-the-badge" alt="中文"></a>
-  <a href="README_en.md"><img src="https://img.shields.io/badge/🇬🇧_Language-English-blue?style=for-the-badge" alt="English"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/切换语言-简体中文-red?style=for-the-badge" alt="简体中文"></a>
+  <a href="README_en.md"><img src="https://img.shields.io/badge/切换语言-English-blue?style=for-the-badge" alt="English"></a>
 </p>
 
 > **一句话**：基于 SFA3D 的 4D 毫米波雷达点云 3D 检测——原创 8D→4D SNR 映射与跨类别 NMS，网络结构沿用 SFA3D 原版
