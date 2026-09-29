@@ -124,9 +124,9 @@ def get_yaw(direction):
 
 def compute_bev_box_iou(box1, box2):
     """
-    Compute IoU between two BEV boxes (improved 2D overlap calculation).
+    两个 BEV 框的伪 IoU（中心距离启发式 + 手工分段，非旋转矩形几何交叠）。
     box format: [score, x, y, z, h, w, l, yaw]
-    Returns more accurate IoU based on rotated rectangle overlap.
+    竞赛调参产物：dist/size < 0.2 → 0.9；< 0.4 → 0.7；否则 1.2 - d。
     """
     # Extract centers and dimensions
     x1, y1, w1, l1, yaw1 = box1[1], box1[2], box1[5], box1[6], box1[7]

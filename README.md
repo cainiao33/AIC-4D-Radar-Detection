@@ -1,6 +1,6 @@
-# SFA4D — 4D 毫米波雷达 + 单目相机融合 3D 检测
+# SFA4D — 4D 毫米波雷达点云 3D 目标检测（基于 SFA3D）
 
-> **一句话**：4D 毫米波雷达 + 单目相机的 3D 目标检测——在 SFA3D 基础上做 8D→4D 点云映射、KFPN 特征融合、无锚点检测头
+> **一句话**：基于 SFA3D 的 4D 毫米波雷达点云 3D 检测——原创 8D→4D SNR 映射与跨类别 NMS，网络结构沿用 SFA3D 原版
 > **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· ONNX 量化后 13 MB
 > **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) 下载）；数据集需自备。指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)，或直接用 [Docker](#-docker-复现)
 
@@ -15,16 +15,18 @@
 
 ## 📖 项目简介
 
-本项目是 **AIC 全球校园人工智能算法精英大赛（算法挑战赛）全国二等奖** 的完整开源方案，专注于 **8D 毫米波雷达点云数据** 的 3D 目标检测任务。
+本项目是 **AIC 全球校园人工智能算法精英大赛（算法挑战赛）全国二等奖** 的完整开源方案，专注于 **8D 毫米波雷达点云数据** 的 3D 目标检测任务（雷达单模态，无相机数据进网络）。
 
-在原始 SFA3D（Super Fast and Accurate 3D Object Detection）基础上，我们针对毫米波雷达数据特性进行了深度优化，提出了 **SFA4D** 检测框架，实现了从 8 维雷达数据到高精度 3D 检测的突破性进展。
+技术路线：**沿用 SFA3D 原版网络**——骨干（FPN-ResNet + KFPN）、损失函数、BEV 生成均未改动——在「数据进」与「结果出」两端做适配与优化，使 LiDAR 检测框架直接吃 4D 毫米波雷达数据。逐文件差异见 [docs/SFA3D与SFA4D源码比对报告.md](docs/SFA3D与SFA4D源码比对报告.md)。
 
-### 核心创新
-- **🎯 8D→4D 智能映射**：首创基于第五维信噪比强度（P）的数据映射方案，将 8D 雷达点云 `[x, y, z, Doppler, P, Range, Azimuth, Elevation]` 映射为 4D 点云 `[x, y, z, intensity]`
-- **🧠 KFPN 特征融合**：自适应 softmax 注意力加权的多尺度特征金字塔网络
-- **⚡ 无锚点检测**：基于 CenterNet 思想，直接预测目标中心热力图、偏移、尺寸、方向角和 Z 坐标
-- **🔄 跨类别 NMS**：有效解决多目标重复检测问题
-- **🌐 端到端学习**：同时预测 7-DOF 目标属性
+### 本项目的改动（相对 SFA3D 原版）
+- **🎯 8D→4D SNR 映射（原创核心）**：新文件 `sfa/data_process/lidar_mapping.py`——8D 点云 `[x, y, z, Doppler, P, Range, Azimuth, Elevation]` 取 `[x, y, z, P]`，第 5 维信噪比 P 分段映射为 intensity（零值→0.1，非零按标定界 `[-1.36, 6.43]` 归一化到 `[0.2, 1.0]`），是 SFA3D 的 BEV intensity 通道能吃雷达数据的承重墙
+- **🔄 跨类别 NMS（原创）**：`apply_inter_class_nms()` 抑制不同类别间的重复检测；诚实说明：其中的 IoU 为中心距离启发式 + 手工分段，**不是**旋转矩形几何交叠
+- **⚙️ 竞赛后处理调参**：超激进参数（peak 0.25 / 跨类 NMS 阈 0.2 / K=50）——75 mAP 的产出链路 = 原版网络 + 本套调参
+- **📦 部署工程**：ONNX 导出 + 纯 NumPy 后处理（CPU 可跑）+ INT8 动态量化（48.57→12.27 MB）
+- **🔁 类别重映射**：KITTI 类别 → Car/Cyclist/Truck（Van/Pedestrian 丢弃），配置级必要适配
+
+> 说明：KFPN 特征融合、无锚点检测头、端到端 7-DOF 预测均为 **SFA3D 论文原有设计**（本项目对应文件与原版逐字节相同），不计入本项目创新。
 
 ---
 
@@ -162,7 +164,7 @@ python sfa/testing_export_ultra_aggressive.py \
 
 **实测**（RTX 4060 Ti / WSL2）：镜像约 4.9 GB；挂载完整数据集跑默认推理命令，20 样本 2.53 s（7.91 FPS，含 9p 挂载 I/O），单样本 GPU 推理 ~10-17 ms，输出标准 KITTI 预测文件。
 
-> ⚠️ 挂载的数据集须含 `testing/{velodyne, image_2, calib}`——推理脚本会读取相机图像；国内构建可自行在 Dockerfile 中保留清华源配置（apt/pip 已默认换源）。
+> ⚠️ 挂载的数据集须含 `testing/{velodyne, image_2, calib}`——推理脚本的 DataLoader 依赖 image_2 目录定位样本（图片本身不进网络，本项目为雷达单模态）；国内构建可自行在 Dockerfile 中保留清华源配置（apt/pip 已默认换源）。
 
 ```bash
 # 构建镜像
@@ -259,6 +261,7 @@ python sfa/quantize_onnx_163.py \
 | 文档 | 说明 |
 |------|------|
 | [docs/技术方案AAA.md](docs/技术方案AAA.md) | 完整技术实现方案 ⭐ |
+| [docs/SFA3D与SFA4D源码比对报告.md](docs/SFA3D与SFA4D源码比对报告.md) | 与 SFA3D 原版的逐文件差异（诚实定位本项目改动） ⭐ |
 | [docs/技术报告.md](docs/技术报告.md) | 深度技术分析报告 |
 | [docs/项目结构说明.md](docs/项目结构说明.md) | 项目架构和文件说明 |
 | [docs/环境依赖清单.md](docs/环境依赖清单.md) | 详细环境配置要求 |
@@ -366,7 +369,7 @@ heads = {
 ## 🙏 致谢
 
 - 感谢 **AIC 全球校园人工智能算法精英大赛** 提供的竞赛平台和数据集
-- 感谢原始 [SFA3D](https://github.com/maudzung/SFA3D) 项目的开源贡献
+- 本项目的网络骨干、损失函数、BEV 生成等核心代码直接沿用 [SFA3D](https://github.com/maudzung/SFA3D)（作者 Nguyen Mau Dung / maudzung，MIT 协议），特此致谢并注明出处；本项目在其基础上新增数据域适配与后处理，详见比对报告
 - 感谢所有团队成员的辛勤付出
 
 ---

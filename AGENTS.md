@@ -6,10 +6,10 @@
 
 ## 1. 项目概述
 
-**SFA4D** 是一个基于 PyTorch 的 3D 目标检测项目，专门面向 **8 维毫米波雷达点云数据**。它在原始 SFA3D（Super Fast and Accurate 3D Object Detection）基础上进行增强，核心创新包括：
+**SFA4D** 是一个基于 PyTorch 的 3D 目标检测项目，专门面向 **8 维毫米波雷达点云数据**（雷达单模态，图片不进网络）。它在原始 SFA3D（Super Fast and Accurate 3D Object Detection）基础上增强——**网络骨干/损失/BEV 生成沿用 SFA3D 原版**（KFPN、无锚点检测头均为 SFA3D 原有设计，逐文件差异见 `docs/SFA3D与SFA4D源码比对报告.md`），本项目原创改动包括：
 
-- **8D → 4D 智能映射**：从 8 维雷达点云 `[x, y, z, Doppler, P, Range, Azimuth, Elevation]` 中选取第 5 维信噪比强度（P）映射为 intensity，输出 4D 点云 `[x, y, z, intensity]`。
-- **KFPN 特征融合**：在 FPN（Feature Pyramid Network）基础上引入 softmax 注意力加权的多尺度特征融合。
+- **8D → 4D 智能映射（原创核心）**：从 8 维雷达点云 `[x, y, z, Doppler, P, Range, Azimuth, Elevation]` 中选取第 5 维信噪比强度（P）分段映射为 intensity，输出 4D 点云 `[x, y, z, intensity]`（`data_process/lidar_mapping.py`）。
+- **KFPN 特征融合**：SFA3D 原有结构——在 FPN 基础上 softmax 注意力加权的多尺度特征融合（`models/fpn_resnet.py` 与原版逐字节相同，此处列出仅为说明结构）。
 - **跨类别 NMS**：在后处理阶段对不同类别之间的重复检测框进行抑制。
 - **无锚点检测（Anchor-Free）**：基于 CenterNet 思想，直接预测目标中心热力图、偏移、尺寸、方向角和 Z 坐标。
 
