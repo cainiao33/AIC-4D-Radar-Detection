@@ -8,7 +8,8 @@ torch==2.0.0
 torchvision==0.15.1
 
 # 数据处理与科学计算（实际运行：numpy 1.24.3 / opencv 4.2.0.34）
-numpy>=1.18
+# numpy 上界必需：torch 2.0.0 与 numpy 2.x 二进制不兼容（新装环境会解析到 numpy 2.x 导致运行时崩溃）
+numpy>=1.18,<2
 opencv-python>=4.2
 scikit-learn>=0.22
 Pillow>=8.0.0

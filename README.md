@@ -160,6 +160,10 @@ python sfa/testing_export_ultra_aggressive.py \
 
 镜像**仅封装最佳 `.pth` 模型**（epoch 163）+ 训练/推理全流程，复刻实际环境（PyTorch 2.0.0+cu118 + CUDA 11.8）；ONNX / INT8 产物不入镜像，直接使用仓库内文件。
 
+**实测**（RTX 4060 Ti / WSL2）：镜像约 4.9 GB；挂载完整数据集跑默认推理命令，20 样本 2.53 s（7.91 FPS，含 9p 挂载 I/O），单样本 GPU 推理 ~10-17 ms，输出标准 KITTI 预测文件。
+
+> ⚠️ 挂载的数据集须含 `testing/{velodyne, image_2, calib}`——推理脚本会读取相机图像；国内构建可自行在 Dockerfile 中保留清华源配置（apt/pip 已默认换源）。
+
 ```bash
 # 构建镜像
 docker build -t sfa4d .
@@ -175,8 +179,6 @@ docker run --gpus all \
     -v /path/to/DRadDataset:/data/DRadDataset \
     -it sfa4d bash
 ```
-
-> 镜像内已含 `sample_data/`（3 个样本），不挂载数据集也可进入容器做数据管线冒烟。
 
 ---
 
