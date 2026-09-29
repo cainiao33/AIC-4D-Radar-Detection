@@ -1,0 +1,24 @@
+# 版本控制与本地产物
+.git
+.gitignore
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# 大体积演示材料（镜像内不需要）
+demo/
+docs/
+*.zip
+
+# 运行时生成目录（由挂载卷接管）
+results/
+logs/
+visualizations*/
+
+# 镜像只封装最佳 .pth（按需排除其余权重产物）
+onnx_models/
+quantized_models/
+
+# 文档类（保留三份启动指令与 README 即可）
+README_CN.md
+AGENTS.md

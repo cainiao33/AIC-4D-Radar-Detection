@@ -1,15 +1,22 @@
 # SFA4D 推理指令文档
 
+## 开始前必读
+
+- ✅ **163 轮权重已随仓库分发**：`./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth`（48.57 MB）
+- ❌ **仓库不含数据集**：`./DRadDataset` 需自备（含 `ImageSets/ testing/ training/`）；`sample_data/` 仅 3 个样本供核对格式
+- 所有命令在**仓库根目录**执行，conda 环境 `sfa3d`
+- ⚠️ **建议始终显式传 `--output-dir`**：不传时代码实际输出到 `<root>/超激进P/`（与参数 help 里写的 `results/<saved_fn>/ultra_aggressive` 不一致，以代码行为为准）
+
 ## 概述
 
-本文档包含SFA4D项目的推理指令，包括超激进NMS策略的推理命令、模型配置和参数说明。
+本文档包含 SFA4D 的推理命令（超激进 NMS 策略）、参数说明与输出格式。
 
 ## 环境要求
 
 - Python 3.8+
 - PyTorch 2.0.0+cu118
 - CUDA 11.8+
-- conda环境：sfa3d
+- conda 环境：`sfa3d`
 
 ## 激活环境
 
@@ -17,182 +24,142 @@
 source activate sfa3d
 ```
 
-## 超激进NMS推理（推荐）
+## 超激进 NMS 推理（推荐）
 
 ### 核心推理指令
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_ultra_aggressive --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0
+source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_ultra_aggressive --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_ultra_aggressive
 ```
 
-### 测试推理指令（10个样本）
+### 测试推理指令（10 个样本）
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_test --num_samples 10 --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0
+source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_test --num_samples 10 --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_test
 ```
 
 ### 完整数据集推理
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_full --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --batch_size 1
+source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_full --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --batch_size 1 --output-dir ./results/sfa4d_163_full
 ```
 
 ## 参数说明
 
 ### 核心参数
 
-- `--pretrained_path`: 模型权重路径（推荐使用163轮模型）
-- `--dataset-dir`: 数据集根目录
-- `--saved_fn`: 输出文件名前缀
-- `--gpu_idx`: GPU设备索引
+- `--pretrained_path`：模型权重路径（推荐 163 轮模型，仓库已附带）
+- `--dataset-dir`：数据集根目录（**必填**）
+- `--saved_fn`：输出文件名前缀
+- `--output-dir`：输出目录（**建议显式指定**，见开头必读）
+- `--gpu_idx`：GPU 设备索引
 
-### 超激进NMS参数
+### 超激进 NMS 参数
 
-- `--peak_thresh 0.25`: 峰值阈值（0.25），更高阈值减少误检
-- `--nms_thresh 0.2`: NMS IoU阈值（0.2），更严格去除重复检测
+- `--peak_thresh 0.25`：峰值阈值，更高阈值减少误检
+- `--nms_thresh 0.2`：NMS IoU 阈值，更严格去除重复检测（含跨类别 NMS）
 
 ### 其他常用参数
 
-- `--num_samples N`: 限制推理样本数量（用于快速测试）
-- `--batch_size N`: 批处理大小（推荐1）
-- `--output-dir PATH`: 自定义输出目录
-- `--no_cuda`: 强制使用CPU推理
+- `--num_samples N`：限制推理样本数量（用于快速测试）
+- `--batch_size N`：批处理大小（推荐 1）
+- `--no_cuda`：强制使用 CPU 推理
 
 ## 推理脚本对比
 
-### 1. 超激进NMS推理（推荐）
+### 1. 超激进 NMS 推理（推荐）
+
 ```bash
-python sfa/testing_export_ultra_aggressive.py
+python sfa/testing_export_ultra_aggressive.py --pretrained_path ... --dataset-dir ./DRadDataset --peak_thresh 0.25 --nms_thresh 0.2 --output-dir ./results/xxx
 ```
-**特点**：
-- `peak_thresh=0.25`（高精度）
-- `nms_thresh=0.2`（去重严格）
-- 适用于高精度要求的场景
+
+**特点**：`peak_thresh=0.25`（高精度）+ `nms_thresh=0.2`（去重严格），适用于高精度要求场景。
 
 ### 2. 标准推理
+
 ```bash
-python sfa/testing.py
+python sfa/testing.py --pretrained_path ... --dataset-dir ./DRadDataset
 ```
-**特点**：
-- 默认参数设置
-- 平衡精度和召回率
+
+**特点**：默认参数，平衡精度和召回率，支持 `--calc-metrics` 计算指标。
 
 ### 3. 验证集推理
+
 ```bash
 python sfa/validation_ultra_aggressive_163.py
 ```
-**特点**：
-- 专门用于验证集评估
-- 支持指标计算
 
-## 性能基准
+**特点**：专门用于 163 轮模型验证集评估（路径以其文件内配置为准）。
 
-### 推理速度
+### 4. ONNX Runtime 推理（CPU 可跑）
 
-- **初始化时间**: ~500ms（首次加载模型）
-- **单样本推理**: 8-15ms
-- **平均FPS**: ~2.8（包含I/O）
+```bash
+pip install onnxruntime && python sfa/run_onnx_inference.py --onnx_model ./onnx_models/sfa3d_163_fp32.onnx --dataset-dir ./DRadDataset --imagesets-dir ./DRadDataset/ImageSets
+```
 
-### 检测效果
+**特点**：跨平台（无需 GPU 与 PyTorch），CPU 约 5.48 FPS；后处理为纯 NumPy 实现。
 
-- **平均检测数**: 1.0个/样本
-- **超激进策略**: 显著减少误检
-- **精度优化**: 适合自动驾驶场景
+## 性能口径说明（三个数字的场景不同，勿混用）
+
+| 数字 | 场景 |
+|------|------|
+| **110.73 FPS** | GPU 纯推理，RTX 4060 Ti，PyTorch FP32 |
+| **~2.8 FPS** | 端到端含 I/O 的日志口径（Windows 验证脚本实测，见下方日志示例） |
+| **5.48 FPS** | ONNX Runtime，CPU，1034 样本平均（182 ms/样本） |
 
 ## 输出结果
 
-### 目录结构
+### 目录结构（显式传 `--output-dir ./results/<saved_fn>` 时）
 
 ```
-results/
-├── sfa4d_163_ultra_aggressive/
-│   ├── data/          # KITTI格式检测结果
-│   └── images/        # 可视化结果（可选）
-└── logs/              # 推理日志
+results/<saved_fn>/
+├── kitti_predictions/    # KITTI 格式检测结果 .txt（每样本一个）
+└── viz/                  # 可视化结果（如启用 --save_test_output）
 ```
+
+不传 `--output-dir` 时输出到 `<root>/超激进P/`（代码实际默认值）。
 
 ### 输出格式
 
-- **检测结果**: KITTI格式 `.txt` 文件
-- **格式**: `[类别] [截断] [遮挡] [角度] [边界框] [维度] [位置] [旋转] [得分]`
+- 检测结果：KITTI 格式 `.txt`
+- 格式：`[类别] [截断] [遮挡] [角度] [边界框] [维度] [位置] [旋转] [得分]`
 
 ## 模型信息
 
-### 163轮模型（推荐）
+### 163 轮模型（推荐，仓库已附带）
 
-**路径**: `./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth`
+**路径**：`./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth`
 
-**特点**：
-- 经过完整300轮训练
-- 在第163轮达到最佳性能
-- 针对8D毫米波雷达数据优化
-- 支持Car、Cyclist、Truck三类检测
+- 经过完整 300 轮训练，第 163 轮达到最佳性能
+- 针对 8D 毫米波雷达数据优化
+- 支持Car、Cyclist、Truck 三类检测
 
 ### 自训练模型
 
-如果使用自己的训练模型：
-
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/your_model/Model_your_model_best.pth --dataset-dir ./DRadDataset --saved_fn your_inference --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0
+source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/your_model/Model_your_model_best.pth --dataset-dir ./DRadDataset --saved_fn your_inference --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/your_inference
 ```
 
 ## 数据处理说明
 
-### 8D数据处理流程
-
 ```
-8D数据 [x,y,z,D,P,R,A,E]
+8D 数据 [x,y,z,D,P,R,A,E]
 → 读取 [0,1,2,4] 维度
-→ P映射为intensity
-→ 输出4D [x,y,z,intensity]
+→ P 映射为 intensity
+→ 输出 4D [x,y,z,intensity]
 ```
 
-### 维度对应关系
-
-- **0**: X坐标
-- **1**: Y坐标
-- **2**: Z坐标
-- **4**: SNR强度值
+- **0/1/2**：X/Y/Z 坐标
+- **4**：SNR 强度值 → intensity
 
 ## 故障排除
 
-### 常见问题
+1. **CUDA 内存不足**：`--batch_size 1`
+2. **模型路径错误**：`ls -la ./checkpoints/sfa3d_8d_full_300epochs/`
+3. **数据集路径错误**：`ls -la ./DRadDataset/testing/velodyne/`
+4. **ImageSets 缺失**：脚本会尝试直接枚举 `velodyne/` 目录，但建议提供完整 `ImageSets/`
 
-1. **CUDA内存不足**
-   ```bash
-   # 减少批处理大小
-   --batch_size 1
-   ```
-
-2. **模型路径错误**
-   ```bash
-   # 检查模型文件是否存在
-   ls -la ./checkpoints/sfa3d_8d_full_300epochs/
-   ```
-
-3. **数据集路径错误**
-   ```bash
-   # 确认数据集目录结构
-   ls -la ./DRadDataset/testing/velodyne/
-   ```
-
-### 性能优化
-
-1. **提高推理速度**
-   ```bash
-   # 增加批处理大小
-   --batch_size 2
-   ```
-
-2. **减少内存使用**
-   ```bash
-   # 限制样本数量
-   --num_samples 100
-   ```
-
-## 日志和监控
-
-### 推理日志示例
+## 日志示例
 
 ```
 ================================================================================
@@ -212,14 +179,13 @@ Average detections per sample: 1.00
 
 ## 版本信息
 
-- **创建日期**: 2025年11月5日
-- **项目版本**: SFA4D v1.0
-- **推理引擎**: PyTorch 2.0.0+cu118
-- **推荐模型**: 163轮训练模型
+- **创建日期**：2025-11-05（2026-09 修订：输出目录默认值、性能口径、与仓库实际文件对齐）
+- **推理引擎**：PyTorch 2.0.0+cu118 / ONNX Runtime
+- **推荐模型**：163 轮训练模型（已随仓库分发）
 
 ---
 
-**注意**:
-1. 推理前确保已激活sfa3d虚拟环境
-2. 推荐使用163轮模型以获得最佳性能
-3. 超激进NMS参数（0.25, 0.2）已针对毫米波雷达数据优化
+**注意**：
+1. 推理前确保已激活 sfa3d 虚拟环境
+2. 推荐使用 163 轮模型以获得最佳性能
+3. 后续可视化见《启动可视化指令》

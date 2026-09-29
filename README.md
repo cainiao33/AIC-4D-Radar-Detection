@@ -2,7 +2,7 @@
 
 > **一句话**：4D 毫米波雷达 + 单目相机的 3D 目标检测——在 SFA3D 基础上做 8D→4D 点云映射、KFPN 特征融合、无锚点检测头
 > **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· ONNX 量化后 13 MB
-> **怎么跑**：`sample_data/` 自带 3 个样本；训练 / 推理 / 可视化指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)
+> **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) 下载）；数据集需自备。指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)，或直接用 [Docker](#-docker-复现)
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0](https://img.shields.io/badge/PyTorch-2.0-red.svg)](https://pytorch.org/)
@@ -28,6 +28,20 @@
 
 ---
 
+## 📦 复现说明
+
+| 内容 | 状态 | 位置 |
+|------|------|------|
+| 163 轮权重 `.pth`（48.57 MB） | ✅ 已随仓库分发 | `checkpoints/sfa3d_8d_full_300epochs/` |
+| FP32 ONNX（48.57 MB） | ✅ 已随仓库分发 | `onnx_models/sfa3d_163_fp32.onnx` |
+| 示例数据（3 个样本） | ✅ 已含 | `sample_data/`（仅供核对数据格式） |
+| **DRadDataset 数据集** | ❌ 不随仓库分发 | 按赛题官方渠道自备（KITTI 格式：`ImageSets/ training/ testing/`） |
+| INT8 动态量化 ONNX（12.27 MB） | ✅ 已随仓库分发 | `quantized_models/sfa3d_163_int8.onnx`（实测与 FP32 检测一致） |
+
+环境以 [requirements.txt](requirements.txt) 与三份启动指令文档为准（Python 3.8 + PyTorch 2.0.0+cu118）；环境安装见下方「快速开始」，或直接用 Docker。
+
+---
+
 ## 🏆 竞赛成果
 
 | 指标 | 成绩 |
@@ -35,7 +49,7 @@
 | **竞赛奖项** | AIC 全球校园人工智能算法精英大赛 · 算法挑战赛 **全国二等奖** |
 | **推理速度** | **110.73 FPS**（RTX 4060 Ti，PyTorch FP32） |
 | **检测精度** | **75% mAP@0.5** |
-| **模型体积** | 48.57 MB（PyTorch）/ 13 MB（量化后） |
+| **模型体积** | 48.57 MB（`.pth` / FP32 ONNX）；INT8 动态量化后 **12.27 MB**（-74.7%，`quantized_models/sfa3d_163_int8.onnx`，实测 3 样本检测与 FP32 一致） |
 | **跨平台推理** | 5.48 FPS（ONNX Runtime，CPU） |
 | **验证样本** | 成功处理 1034 个验证样本，检测率 20.7% |
 
@@ -52,11 +66,21 @@ SFA4D/
 │   ├── losses/                   # 损失函数（FocalLoss + L1Loss + BalancedL1Loss）
 │   ├── utils/                    # 工具函数（NMS、可视化、训练辅助）
 │   └── *.py                      # 训练/推理/导出脚本
-├── sample_data/                  # 示例数据集（3 个样本，用于快速体验）
-│   ├── velodyne/                 # 8D 雷达点云（.bin）
-│   ├── label_2/                  # KITTI 格式标注（.txt）
-│   └── calib/                    # 标定参数（.txt）
+├── checkpoints/                  # ✅ 已分发权重
+│   └── sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth
+├── onnx_models/                  # ✅ FP32 ONNX（sfa3d_163_fp32.onnx）+ 导出/推理文档
+├── quantized_models/             # ✅ INT8 动态量化 ONNX（sfa3d_163_int8.onnx，12.27 MB）
+├── sample_data/                  # 示例数据（3 个样本，仅供核对数据格式）
+│   └── training/
+│       ├── velodyne/             # 8D 雷达点云（.bin）
+│       ├── label_2/              # KITTI 格式标注（.txt）
+│       └── calib/                # 定标参数（.txt）
+├── demo/                         # 演示 gif / 图片
 ├── docs/                         # 技术文档（中文）
+├── 启动训练指令.md                # 训练 / 导出 / 量化命令
+├── 启动推理指令（kitti格式预测结果）.md  # 推理命令与参数
+├── 启动可视化指令.md              # 可视化命令
+├── Dockerfile / .dockerignore   # Docker 复现（仅封装最佳 .pth）
 ├── requirements.txt              # 环境依赖
 ├── README.md                     # 本文件（中文）
 └── LICENSE                       # MIT 开源协议
@@ -68,17 +92,17 @@ SFA4D/
 
 ### 环境要求
 
-- Python 3.8+
-- PyTorch 2.0.0+cu118（推荐）或 1.5.0+
-- CUDA 11.8+（GPU 推理）
+- Python 3.8+（实际验证 3.8.20）
+- PyTorch 2.0.0+cu118
+- CUDA 11.8+（GPU 训练/推理）
 - Windows 10/11 或 Linux Ubuntu 18.04+
 
 ### 安装依赖
 
 ```bash
 # 创建虚拟环境（推荐）
-conda create -n sfa4d python=3.8
-conda activate sfa4d
+conda create -n sfa3d python=3.8
+conda activate sfa3d
 
 # 安装 PyTorch（CUDA 11.8）
 pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 --index-url https://download.pytorch.org/whl/cu118
@@ -100,12 +124,14 @@ python sfa/train.py \
     --gpu_idx 0
 ```
 
+> 注：`sample_data/` 不含 `ImageSets/`，脚本将直接从 `velodyne/`/`label_2/` 枚举文件（见 AGENTS.md「常见陷阱」）；仅供数据管线冒烟，不代表训练效果。
+
 ### 完整训练（300 epoch）
 
 ```bash
 python sfa/train.py \
     --num_epochs 300 \
-    --saved_fn sfa4d_full \
+    --saved_fn sfa3d_8d_full_300epochs \
     --batch_size 16 \
     --dataset-dir ./DRadDataset \
     --root-dir ./ \
@@ -114,18 +140,43 @@ python sfa/train.py \
     --print_freq 50
 ```
 
-### 推理（使用预训练模型）
+### 推理（使用已分发模型）
 
 ```bash
 # 超激进 NMS 推理（推荐，用于验证/测试）
 python sfa/testing_export_ultra_aggressive.py \
-    --pretrained_path ./checkpoints/sfa4d_full/Model_sfa4d_full_epoch_163.pth \
+    --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
     --dataset-dir ./DRadDataset \
     --saved_fn sfa4d_163_ultra \
     --peak_thresh 0.25 \
     --nms_thresh 0.2 \
-    --gpu_idx 0
+    --gpu_idx 0 \
+    --output-dir ./results/sfa4d_163_ultra
 ```
+
+---
+
+## 🐳 Docker 复现
+
+镜像**仅封装最佳 `.pth` 模型**（epoch 163）+ 训练/推理全流程，复刻实际环境（PyTorch 2.0.0+cu118 + CUDA 11.8）；ONNX / INT8 产物不入镜像，直接使用仓库内文件。
+
+```bash
+# 构建镜像
+docker build -t sfa4d .
+
+# ① 默认命令：对挂载的数据集跑超激进 NMS 推理（结果目录建议挂载出来）
+docker run --gpus all \
+    -v /path/to/DRadDataset:/data/DRadDataset \
+    -v $PWD/results:/app/results \
+    sfa4d
+
+# ② 进入容器执行任意命令（训练 / 评估 / 可视化）
+docker run --gpus all \
+    -v /path/to/DRadDataset:/data/DRadDataset \
+    -it sfa4d bash
+```
+
+> 镜像内已含 `sample_data/`（3 个样本），不挂载数据集也可进入容器做数据管线冒烟。
 
 ---
 
@@ -146,33 +197,36 @@ python sfa/testing_export_ultra_aggressive.py \
 | 6 | Azimuth | 方位角 |
 | 7 | Elevation | 俯仰角 |
 
-### 数据集下载
+### 数据集获取
 
-完整 DRadDataset 数据集（训练集 5168 样本 + 测试集 1384 样本）可通过 GitHub Release 或网盘获取。
+完整 DRadDataset 数据集（训练集 5168 样本 + 测试集 1384 样本）**不随仓库与 Release 分发**，请通过赛题官方渠道获取，并按 KITTI 格式放置：`DRadDataset/{ImageSets, training, testing}/`。仓库根目录的 `sample_data/`（3 个样本）仅供核对数据格式。
 
 ---
 
 ## 🧠 预训练模型
 
-| 模型 | 大小 | 说明 | 下载 |
+| 模型 | 大小 | 说明 | 获取 |
 |------|------|------|------|
-| Epoch 163（PyTorch） | 49 MB | 推荐使用的最佳模型 | [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
-| ONNX FP32 | 49 MB | 跨平台部署 | [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
-| 动态量化 | 13 MB | 边缘设备部署 | [GitHub Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
+| Epoch 163（PyTorch） | 48.57 MB | 推荐使用的最佳模型 | ✅ 仓库内 `checkpoints/sfa3d_8d_full_300epochs/`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
+| ONNX FP32 | 48.57 MB | 跨平台部署（CPU 可跑） | ✅ 仓库内 `onnx_models/sfa3d_163_fp32.onnx`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Camera-Fusion/releases/tag/v1.0) |
+| INT8 动态量化 ONNX | 12.27 MB | 边缘设备部署 | ✅ 仓库内 `quantized_models/sfa3d_163_int8.onnx` |
 
 ### 模型导出
 
 ```bash
-# PyTorch → ONNX
+# PyTorch → ONNX（仓库已附带导出结果，无需重复执行）
 python sfa/export_to_onnx.py \
-    --model ./checkpoints/sfa4d_full/Model_sfa4d_full_epoch_163.pth \
-    --output ./onnx_models/sfa4d_163_fp32.onnx
+    --model ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
+    --output ./onnx_models/sfa3d_163_fp32.onnx
 
-# 模型量化
-python sfa/quantize_model_163.py \
-    --model ./checkpoints/sfa4d_full/Model_sfa4d_full_epoch_163.pth \
-    --method dynamic \
-    --output ./quantized_models/
+# ONNX INT8 动态量化：48.57 MB → 12.27 MB（仓库已附带产物，无需重复执行）
+# 脚本量化后自动用 sample_data 真实样本对比 FP32/INT8 检测结果
+python sfa/quantize_onnx_163.py \
+    --onnx_model ./onnx_models/sfa3d_163_fp32.onnx \
+    --output ./quantized_models/sfa3d_163_int8.onnx
+
+# 注：sfa/quantize_model_163.py 为 PyTorch 量化路线，仅作对照——
+# torch 动态量化不支持 Conv2d，本模型为纯卷积网络，实测压缩率 0%
 ```
 
 ---
@@ -193,8 +247,8 @@ python sfa/quantize_model_163.py \
 | 平台 | 框架 | 速度 | 说明 |
 |------|------|------|------|
 | RTX 4060 Ti | PyTorch FP32 | **110.73 FPS** | GPU 推理 |
-| CPU | ONNX Runtime | 5.48 FPS | 跨平台部署 |
-| CPU | 量化模型 | 4-5 FPS | 边缘设备 |
+| CPU | ONNX Runtime FP32 | 5.48 FPS | 跨平台部署（复测 5.40） |
+| CPU | ONNX Runtime INT8 | 3.23 FPS | 收益在体积（-74.7%）；x86 动态量化不提速，见《启动训练指令》量化说明 |
 
 ---
 

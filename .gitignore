@@ -18,21 +18,28 @@ ENV/
 *.swo
 *~
 
-# 训练输出（临时/可重新生成）
+# 训练输出（临时/可重新生成；分发的 163 权重见文件末尾例外）
 logs/
 results/
-checkpoints/
+checkpoints/*
+!checkpoints/sfa3d_8d_full_300epochs/
+checkpoints/sfa3d_8d_full_300epochs/*
 *.log
 
 # 数据集（完整数据集不放入 Git，通过网盘下载）
 DRadDataset/
 DRadDataset - fs/
 
-# 模型文件（大文件，放 GitHub Release 附件）
+# 模型文件（训练产生的权重不入库；分发的三个产物见下方例外）
 *.pth
 *.onnx
 *.pt
 *.pkl
+
+# 分发产物例外（随仓库分发的权重）
+!checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth
+!onnx_models/sfa3d_163_fp32.onnx
+!quantized_models/sfa3d_163_int8.onnx
 
 # 演示视频（大文件，放 GitHub Release 附件）
 *.mp4

@@ -1,43 +1,26 @@
-# SFA4D 完整依赖清单
-# 深度学习框架
-torch==1.5.0
-torchvision==0.6.0
+# SFA4D 依赖清单
+# 实际训练/推理环境：Python 3.8.20 + PyTorch 2.0.0+cu118 + CUDA 11.8（conda env: sfa3d）
+# CUDA 版 torch 需从 PyTorch 官方索引安装：
+#   pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+# （Docker 用户无需手动安装，见 README「Docker 复现」）
 
-# 数据处理与科学计算
-numpy==1.18.3
-opencv-python==4.2.0.34
-scikit-learn==0.22.2
+torch==2.0.0
+torchvision==0.15.1
+
+# 数据处理与科学计算（实际运行：numpy 1.24.3 / opencv 4.2.0.34）
+numpy>=1.18
+opencv-python>=4.2
+scikit-learn>=0.22
 Pillow>=8.0.0
 
 # 可视化与绘图
-matplotlib==3.3.3
-tensorboard==2.2.1
+matplotlib>=3.3
+tensorboard>=2.2
 
 # 工具库
-easydict==1.9
-tqdm==4.54.0
-wget==3.2
-torchsummary==1.5.1
+easydict>=1.9
+tqdm>=4.54
+torchsummary>=1.5
 
-# 数据处理相关
-pathlib2>=2.3.5; python_version<"3.4"
-
-# 开发与调试工具
-ipython>=7.0.0
-jupyter>=1.0.0
-
-# 可选依赖 (用于特定功能)
-# 分布式训练
-# apex  # NVIDIA Apex for mixed precision training
-
-# 数据格式支持
-# h5py>=2.10.0  # HDF5 file format support
-# scipy>=1.4.0  # Scientific computing
-
-# 性能分析
-# memory_profiler>=0.57.0
-# line_profiler>=3.0.0
-
-# 代码质量
-# flake8>=3.8.0
-# black>=20.8b1
+# 可选：ONNX Runtime 推理（CPU 部署，见 启动推理指令）
+# pip install onnxruntime
