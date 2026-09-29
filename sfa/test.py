@@ -99,7 +99,7 @@ def parse_test_configs():
     ####################################################################
     ##############Dataset, Checkpoints, and results dir configs#########
     ####################################################################
-    configs.root_dir = '../'
+    configs.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
     if configs.dataset_dir is None:
         configs.dataset_dir = os.path.join(configs.root_dir, 'dataset', 'kitti')

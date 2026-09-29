@@ -23,5 +23,5 @@ easydict>=1.9
 tqdm>=4.54
 torchsummary>=1.5
 
-# 可选：ONNX Runtime 推理（CPU 部署，见 启动推理指令）
+# 可选：ONNX Runtime 推理（CPU 部署，见 docs/操作指令/）
 # pip install onnxruntime

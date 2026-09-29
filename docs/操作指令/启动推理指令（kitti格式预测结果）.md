@@ -2,10 +2,11 @@
 
 ## 开始前必读
 
-- ✅ **163 轮权重已随仓库分发**：`./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth`（48.57 MB）
+- ✅ **163 轮权重已随仓库分发**：`./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth`（48.65 MB）
 - ❌ **仓库不含数据集**：`./DRadDataset` 需自备（含 `ImageSets/ testing/ training/`）；`sample_data/` 仅 3 个样本供核对格式
 - 所有命令在**仓库根目录**执行，conda 环境 `sfa3d`
-- ⚠️ **建议始终显式传 `--output-dir`**：不传时代码实际输出到 `<root>/超激进P/`（与参数 help 里写的 `results/<saved_fn>/ultra_aggressive` 不一致，以代码行为为准）
+- **正式推理入口为 `sfa/eval.py`**（2026-09 起从原竞赛脚本 `testing_export_ultra_aggressive.py` 整理而来，推理逻辑逐行一致；原脚本归档于 `sfa/legacy/`）
+- ⚠️ **建议始终显式传 `--output-dir`**：`eval.py` 不传时默认输出到 `<root>/results/eval/`；若直接跑 `sfa/legacy/` 下的原竞赛脚本，其不传 `--output-dir` 时会输出到 `<root>/超激进P/`（与参数 help 文案不一致，以代码行为为准）
 
 ## 概述
 
@@ -29,19 +30,19 @@ source activate sfa3d
 ### 核心推理指令
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_ultra_aggressive --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_ultra_aggressive
+source activate sfa3d && python sfa/eval.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_ultra_aggressive --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_ultra_aggressive
 ```
 
 ### 测试推理指令（10 个样本）
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_test --num_samples 10 --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_test
+source activate sfa3d && python sfa/eval.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_test --num_samples 10 --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/sfa4d_163_test
 ```
 
 ### 完整数据集推理
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_full --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --batch_size 1 --output-dir ./results/sfa4d_163_full
+source activate sfa3d && python sfa/eval.py --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth --dataset-dir ./DRadDataset --saved_fn sfa4d_163_full --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --batch_size 1 --output-dir ./results/sfa4d_163_full
 ```
 
 ## 参数说明
@@ -70,7 +71,7 @@ source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrai
 ### 1. 超激进 NMS 推理（推荐）
 
 ```bash
-python sfa/testing_export_ultra_aggressive.py --pretrained_path ... --dataset-dir ./DRadDataset --peak_thresh 0.25 --nms_thresh 0.2 --output-dir ./results/xxx
+python sfa/eval.py --pretrained_path ... --dataset-dir ./DRadDataset --peak_thresh 0.25 --nms_thresh 0.2 --output-dir ./results/xxx
 ```
 
 **特点**：`peak_thresh=0.25`（高精度）+ `nms_thresh=0.2`（去重严格），适用于高精度要求场景。
@@ -86,10 +87,10 @@ python sfa/testing.py --pretrained_path ... --dataset-dir ./DRadDataset
 ### 3. 验证集推理
 
 ```bash
-python sfa/validation_ultra_aggressive_163.py
+python sfa/legacy/validation_ultra_aggressive_163.py --dataset-dir <数据集绝对路径> --pretrained_path <权重绝对路径>
 ```
 
-**特点**：专门用于 163 轮模型验证集评估（路径以其文件内配置为准）。
+**特点**：专门用于 163 轮模型验证集评估。`--dataset-dir` 必填；归档脚本请全部传**绝对路径**（原因见 `sfa/legacy/README.md` 路径注意事项）。
 
 ### 4. ONNX Runtime 推理（CPU 可跑）
 
@@ -109,15 +110,26 @@ pip install onnxruntime && python sfa/run_onnx_inference.py --onnx_model ./onnx_
 
 ## 输出结果
 
-### 目录结构（显式传 `--output-dir ./results/<saved_fn>` 时）
+### 目录结构
+
+- **`eval.py`（本文档主命令）**：检测结果 `.txt`（每样本一个）**平铺写入 `--output-dir` 根下**，不建子目录：
 
 ```
-results/<saved_fn>/
+results/<output-dir>/
+├── 000040.txt
+├── 000050.txt
+└── 000055.txt
+```
+
+不传 `--output-dir` 时，`eval.py` 输出到 `<root>/results/eval/`（代码实际默认值）。
+
+- **`testing.py`（标准推理）**：才使用带时间戳的 `kitti_predictions/` + `viz/` 布局：
+
+```
+results/<saved_fn>/<timestamp>/
 ├── kitti_predictions/    # KITTI 格式检测结果 .txt（每样本一个）
 └── viz/                  # 可视化结果（如启用 --save_test_output）
 ```
-
-不传 `--output-dir` 时输出到 `<root>/超激进P/`（代码实际默认值）。
 
 ### 输出格式
 
@@ -137,7 +149,7 @@ results/<saved_fn>/
 ### 自训练模型
 
 ```bash
-source activate sfa3d && python sfa/testing_export_ultra_aggressive.py --pretrained_path ./checkpoints/your_model/Model_your_model_best.pth --dataset-dir ./DRadDataset --saved_fn your_inference --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/your_inference
+source activate sfa3d && python sfa/eval.py --pretrained_path ./checkpoints/your_model/Model_your_model_best.pth --dataset-dir ./DRadDataset --saved_fn your_inference --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0 --output-dir ./results/your_inference
 ```
 
 ## 数据处理说明
@@ -179,7 +191,7 @@ Average detections per sample: 1.00
 
 ## 版本信息
 
-- **创建日期**：2025-11-05（2026-09 修订：输出目录默认值、性能口径、与仓库实际文件对齐）
+- **创建日期**：2025-11-05（2026-09 修订：推理入口统一为 `sfa/eval.py`、输出目录默认值、性能口径、与仓库实际文件对齐）
 - **推理引擎**：PyTorch 2.0.0+cu118 / ONNX Runtime
 - **推荐模型**：163 轮训练模型（已随仓库分发）
 

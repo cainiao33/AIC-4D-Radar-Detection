@@ -122,7 +122,7 @@ def parse_infer_configs():
     }
     configs.num_input_features = 4
 
-    configs.root_dir = '../'
+    configs.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     if configs.dataset_dir is None:
         configs.dataset_dir = os.path.join(configs.root_dir, 'dataset', 'kitti')
     elif not os.path.isabs(configs.dataset_dir):

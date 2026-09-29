@@ -19,6 +19,8 @@ visualizations*/
 onnx_models/
 quantized_models/
 
-# 文档类（保留三份启动指令与 README 即可）
-README_CN.md
+# CI/开发工具与 AI 助手文档（镜像内不需要；测试可 -v 挂载进容器跑）
+.github/
+tests/
+pyproject.toml
 AGENTS.md

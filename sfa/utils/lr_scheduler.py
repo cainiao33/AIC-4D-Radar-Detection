@@ -1,3 +1,5 @@
+import types
+
 import torch
 from torch.optim import SGD, lr_scheduler
 import numpy as np

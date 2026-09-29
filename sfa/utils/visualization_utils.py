@@ -73,7 +73,7 @@ def draw_box_3d_v2(image, qs, color=(255, 0, 255), thickness=2):
           6 -------- 7
 
     '''
-    qs = qs.astype(int32)
+    qs = qs.astype(np.int32)
     for k in range(0, 4):
         # Ref: http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html
         i, j = k, (k + 1) % 4

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install PyTorch (CPU)
+        # torch 2.0.0 与 numpy 2.x 二进制不兼容 → 先装 CPU 版 torch，再装其余依赖（numpy<2）
+        run: |
+          pip install torch==2.0.0+cpu torchvision==0.15.1+cpu \
+            --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install dependencies
+        run: |
+          pip install pytest ruff
+          grep -vE '^(torch|torchvision)==' requirements.txt | pip install -r /dev/stdin
+          pip install -e .   # 校验 pyproject 可安装（依赖解析）
+
+      - name: Syntax gate
+        run: python -m compileall -q sfa tests
+
+      - name: Lint (syntax + undefined names only)
+        run: ruff check sfa tests
+
+      - name: Unit tests
+        run: pytest tests -q

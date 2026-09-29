@@ -11,13 +11,15 @@
 
 | 类别 | 数量 | 文件 |
 |---|---|---|
-| **逐字节相同**（MD5 一致） | 13 | `models/fpn_resnet.py`、`losses/losses.py`、`data_process/kitti_bev_utils.py`、`utils/lr_scheduler.py`、`utils/torch_utils.py`、`utils/misc.py`、`utils/logger.py`、`utils/demo_utils.py` + 5 个 `__init__.py` |
+| **逐字节相同**（MD5 一致） | 12 | `models/fpn_resnet.py`、`losses/losses.py`、`data_process/kitti_bev_utils.py`、`utils/torch_utils.py`、`utils/misc.py`、`utils/logger.py`、`utils/demo_utils.py` + 5 个 `__init__.py` |
 | **仅删作者署名/文件头注释**（功能 0 改动） | 6 | `kitti_data_utils.py`、`kitti_dataloader.py`、`transformation.py`、`model_utils.py`、`demo_front.py`、`demo_2_sides.py` |
 | **有实质功能改动** | 10 | `evaluation_utils.py`（±241 行）、`kitti_dataset.py`（±40）、`train.py`（±37）、`train_config.py`（±34）、`test.py`（±31）、`kitti_config.py`（±18）、`train_utils.py`（±13）、`resnet.py`（±4）、`demo_dataset.py`（±4）、`visualization_utils.py`（±4） |
 
 另有 1 个新增核心模块（`data_process/lidar_mapping.py`，约 105 行）和约 37 个新增顶层工程脚本（推理/评估/量化/可视化）。
 
 **核心事实：网络结构、损失函数、BEV 生成、数据增强、学习率策略全部原封未动。** 真正的算法改动集中在两处——数据入口（1 个新文件）和后处理（1 个文件）。
+
+> 注：`utils/lr_scheduler.py` 原与上游逐字节相同；2026-09 仓库整理时修复了上游遗留的 `types` 未导入 bug（`state_dict()` 中的 `NameError` 隐患，+2 行 `import types`），`utils/visualization_utils.py` 同批修复 1 处 `int32` 未定义（→ `np.int32`）。两处均为纯 bug 修复，无功能改动，故不再计入"逐字节相同"。
 
 ---
 

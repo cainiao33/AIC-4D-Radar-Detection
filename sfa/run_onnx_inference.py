@@ -52,7 +52,7 @@ def parse_configs():
     parser.add_argument('--K', type=int, default=50)
     parser.add_argument('--peak_thresh', type=float, default=0.25)
     parser.add_argument('--nms_thresh', type=float, default=0.2)
-    parser.add_argument('--output-dir', type=str, default='../results/onnx_inference')
+    parser.add_argument('--output-dir', type=str, default='./results/onnx_inference')
 
     cfg = edict(vars(parser.parse_args()))
 
@@ -66,9 +66,6 @@ def parse_configs():
     cfg.num_z = 1
     cfg.num_dim = 3
     cfg.num_direction = 2
-    cfg.K = 50
-    cfg.peak_thresh = 0.25
-    cfg.nms_thresh = 0.2
 
     cfg.heads = {
         'hm_cen': cfg.num_classes,

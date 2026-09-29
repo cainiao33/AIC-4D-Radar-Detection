@@ -1,0 +1,46 @@
+# 元数据与依赖声明。本仓库为源码直跑型（python sfa/train.py 等，模块经 sfa/ 内
+# sys.path 自举以顶层名导入），不打包安装包本体 —— packages 留空，pip install -e .
+# 仅安装依赖。torch/torchvision 需按目标环境（cu118/CPU/Docker）单独安装，见 requirements.txt。
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sfa4d"
+version = "1.0.0"
+description = "SFA4D: 4D millimeter-wave radar point-cloud 3D object detection (based on SFA3D)"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "AIC-4D Team" }]
+classifiers = [
+    "License :: OSI Approved :: MIT Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.18,<2",
+    "opencv-python>=4.2",
+    "scikit-learn>=0.22",
+    "Pillow>=8.0.0",
+    "matplotlib>=3.3",
+    "easydict>=1.9",
+    "tqdm>=4.54",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff"]
+onnx = ["onnx", "onnxruntime"]
+
+[tool.setuptools]
+packages = []  # 见文件头注释：不安装包本体
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+# 只做语法/未定义名级别的门槛（E9, F821），不做风格检查
+exclude = ["sfa/legacy"]
+
+[tool.ruff.lint]
+select = ["E9", "F821"]

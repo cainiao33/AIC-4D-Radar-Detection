@@ -22,10 +22,10 @@
 | 组件 | 版本/说明 |
 |------|-----------|
 | Python | 3.8+（已验证 3.8.20） |
-| PyTorch | 2.0.0+cu118（实际运行环境）；requirements.txt 中标注为 1.5.0 |
+| PyTorch | 2.0.0（requirements.txt 钉定 torch==2.0.0 / torchvision==0.15.1）；实际运行 2.0.0+cu118 |
 | CUDA | 11.8+（推荐），最低 10.1 |
-| OpenCV | 4.2.0.34 |
-| NumPy | 1.24.3（实际）/ 1.18.3（requirements.txt） |
+| OpenCV | >=4.2（requirements.txt）；实际 4.2.0.34 |
+| NumPy | >=1.18,<2（requirements.txt；上界必需——torch 2.0.0 与 numpy 2.x 二进制不兼容）；实际 1.24.3 |
 | 其他关键库 | easydict, tqdm, tensorboard, matplotlib, scikit-learn |
 | 可选 | onnxruntime（ONNX 推理）、spconv-cu118（稀疏卷积） |
 
@@ -65,20 +65,19 @@ SFA4D/
 │   │   ├── logger.py             # 日志记录器
 │   │   └── lr_scheduler.py       # OneCyclePolicy 等自定义学习率策略
 │   ├── train.py                  # 主训练脚本（支持单 GPU / 多 GPU / 分布式训练）
+│   ├── eval.py                   # 正式推理/评测入口（超激进 NMS 参数为默认）
 │   ├── test.py                   # 原始推理脚本（可视化输出）
 │   ├── testing.py                # 增强推理脚本（KITTI 格式输出 + 可选指标计算）
-│   ├── testing_export.py         # 导出推理结果到 KITTI 格式
-│   ├── testing_export_ultra_aggressive.py  # 超激进 NMS 推理（推荐用于验证集）
 │   ├── export_to_onnx.py         # PyTorch → ONNX 模型导出
 │   ├── run_onnx_inference.py     # ONNX Runtime 推理（纯 NumPy 后处理）
-│   ├── quantize_model_163.py     # PyTorch 官方量化（动态/静态）
+│   ├── quantize_model_163.py     # PyTorch 官方量化（动态/静态，实测压缩率 0%，仅对照）
+│   ├── quantize_onnx_163.py      # ONNX INT8 动态量化（正式量化路线）
 │   ├── quantize_config.py        # 量化专用配置（独立于训练配置）
 │   ├── batch_visualize_3d_boxes_final.py   # 批量可视化（白底 + 渐变点云）
 │   ├── create_video_from_images.py         # 从可视化图片生成视频
-│   ├── kitti_evaluation_163.py # KITTI 标准 mAP 评估
-│   ├── simple_onnx_evaluation.py # ONNX 结果统计
-│   ├── analyze_163epoch_performance.py     # 163 轮模型性能分析
-│   └── ...（其他实验/调试脚本）
+│   ├── calculate_map.py          # 离线 mAP 计算（IoU 0.5/0.7）
+│   ├── kitti_evaluation_163.py   # KITTI 标准 mAP 评估
+│   └── legacy/                   # 实验脚本归档（含伪结果/损坏脚本，见 legacy/README.md，数字不得引用）
 ├── DRadDataset/                  # 8D 毫米波雷达数据集
 │   ├── ImageSets/                # 数据划分索引（train.txt / val.txt / test.txt）
 │   ├── training/                 # 训练数据
@@ -96,8 +95,10 @@ SFA4D/
 │       └── tensorboard/          # TensorBoard 事件文件
 ├── results/                      # 推理输出的 KITTI 格式检测结果
 ├── onnx_models/                  # ONNX 导出模型
+├── tests/                        # pytest 单元测试（8D 映射 / BEV / NMS / 伪 IoU）
+├── .github/workflows/ci.yml      # CI：语法门 + 单元测试
 ├── demo/                         # 演示图片和视频
-└── docs/                         # 中文技术文档（方案、报告、指南等）
+└── docs/                         # 中文技术文档（方案、报告、指南等；操作指令在 docs/操作指令/）
 ```
 
 ---
@@ -188,7 +189,8 @@ python sfa/train.py \
     --multiprocessing-distributed \
     --world-size 1 --rank 0 \
     --batch_size 64 --num_workers 8 \
-    --dataset-dir ./DRadDataset
+    --dataset-dir ./DRadDataset \
+    --root-dir ./
 ```
 
 #### 恢复训练
@@ -206,15 +208,15 @@ python sfa/train.py \
 
 ### 5.3 推理（KITTI 格式输出）
 
-#### 超激进 NMS 推理（推荐，用于验证/测试）
+#### 正式推理入口（超激进 NMS 参数为默认值；原竞赛脚本归档于 `sfa/legacy/`）
 ```bash
-python sfa/testing_export_ultra_aggressive.py \
+python sfa/eval.py \
     --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
     --dataset-dir ./DRadDataset \
-    --saved_fn sfa4d_163_ultra_aggressive \
     --peak_thresh 0.25 \
     --nms_thresh 0.2 \
-    --gpu_idx 0
+    --gpu_idx 0 \
+    --output-dir ./results/sfa4d_163_eval
 ```
 
 #### 标准推理（含可视化）
@@ -227,8 +229,8 @@ python sfa/testing.py \
 ```
 
 **推理输出**：
-- KITTI 格式检测结果：`results/<saved_fn>/<timestamp>/kitti_predictions/000000.txt`
-- 可视化图像（如启用 `--save_test_output`）：`results/<saved_fn>/<timestamp>/viz/000000.jpg`
+- `eval.py`：KITTI 格式检测结果 `.txt` 平铺写入 `--output-dir` 根下（默认 `results/eval/000000.txt`），不建子目录
+- `testing.py`：带时间戳布局 `results/<saved_fn>/<timestamp>/kitti_predictions/000000.txt`；可视化（如启用 `--save_test_output`）在 `results/<saved_fn>/<timestamp>/viz/000000.jpg`
 
 ### 5.4 可视化
 
@@ -257,6 +259,12 @@ python sfa/run_onnx_inference.py \
 ### 5.6 模型量化
 
 ```bash
+# 正式路线：ONNX INT8 动态量化（48.57→12.27 MB，量化后自动做 FP32/INT8 对照）
+python sfa/quantize_onnx_163.py \
+    --onnx_model ./onnx_models/sfa3d_163_fp32.onnx \
+    --output ./quantized_models/sfa3d_163_int8.onnx
+
+# 对照：PyTorch 官方量化（动态量化不支持 Conv2d，纯卷积网络实测压缩率 0%）
 python sfa/quantize_model_163.py \
     --model ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
     --method dynamic \
@@ -326,7 +334,8 @@ KITTI 格式检测结果 / 可视化图像
 - **KITTI 格式输出**：所有推理脚本默认将结果保存为 KITTI 标准格式 `.txt` 文件，可直接用于官方评估工具。
 - **指标计算**：`testing.py` 支持 `--calc-metrics` 参数，在存在 ground-truth 时计算 mAP、Precision、Recall、IoU。
 - **ONNX 评估**：`run_onnx_inference.py` 输出检测统计（每类数量、平均置信度、FPS）。
-- **163 轮模型专项分析**：`analyze_163epoch_performance.py` 对 163 轮模型进行深度性能分析。
+- **离线评估**：`sfa/calculate_map.py` 与 `sfa/kitti_evaluation_163.py` 对预测目录 vs GT 目录计算各类 AP/mAP。
+- ⚠️ `sfa/legacy/analyze_163epoch_performance.py`、`sfa/legacy/simple_onnx_evaluation.py` 等归档脚本输出的"性能数字"为硬编码/伪结果（见 `sfa/legacy/README.md`），**不得引用**。
 
 ### 7.3 可视化验证
 - `batch_visualize_3d_boxes_final.py`：将检测结果与 BEV 点云叠加绘制，用于人工检查检测质量。
@@ -371,7 +380,8 @@ KITTI 格式检测结果 / 可视化图像
 ### 9.2 部署建议
 - **GPU 服务器**：直接使用 PyTorch FP32 模型，推理速度约 110 FPS（RTX 4060 Ti）。
 - **跨平台/边缘设备**：导出 ONNX 模型，使用 ONNX Runtime 推理（约 5.5 FPS，CPU）。
-- **极致压缩**：使用 `quantize_model_163.py` 进行动态量化，模型体积从 ~49MB 压缩至 ~13MB（压缩率 73%）。
+- **极致压缩**：`quantize_onnx_163.py` 做 ONNX INT8 动态量化，48.57 MB → 12.27 MB（-74.7%）。
+  注意 `quantize_model_163.py`（PyTorch 路线）对纯卷积网络压缩率为 0%，仅作对照保留。
 
 ### 9.3 常见陷阱
 - **路径错误**：确保 `--dataset-dir` 指向包含 `ImageSets/` 和 `training/`（或 `testing/`）的目录。
@@ -384,14 +394,14 @@ KITTI 格式检测结果 / 可视化图像
 ## 10. 快速参考：最常用命令
 
 ```bash
-# 训练（单 GPU，快速测试）
-python sfa/train.py --num_epochs 3 --batch_size 4 --dataset-dir ./DRadDataset --gpu_idx 0
+# 训练（单 GPU，快速测试）——root-dir ./ 必传：不传时按 '../' 解析到仓库上级
+python sfa/train.py --num_epochs 3 --batch_size 4 --dataset-dir ./DRadDataset --root-dir ./ --gpu_idx 0
 
 # 训练（完整 300 epoch）
-python sfa/train.py --num_epochs 300 --batch_size 16 --saved_fn sfa3d_8d_full --dataset-dir ./DRadDataset --gpu_idx 0
+python sfa/train.py --num_epochs 300 --batch_size 16 --saved_fn sfa3d_8d_full --dataset-dir ./DRadDataset --root-dir ./ --gpu_idx 0
 
-# 推理（推荐 163 轮模型 + 超激进 NMS）
-python sfa/testing_export_ultra_aggressive.py \
+# 推理（推荐 163 轮模型 + 超激进 NMS；正式入口 eval.py，原竞赛脚本归档于 sfa/legacy/）
+python sfa/eval.py \
     --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
     --dataset-dir ./DRadDataset --peak_thresh 0.25 --nms_thresh 0.2 --gpu_idx 0
 
@@ -407,4 +417,4 @@ python -m tensorboard.main --logdir logs/sfa3d_8d_full_300epochs/tensorboard/
 
 ---
 
-*本文档基于 SFA4D 项目实际代码和文档整理，最后更新于 2026-07-15。*
+*本文档基于 SFA4D 项目实际代码和文档整理，最后更新于 2026-09-29。*

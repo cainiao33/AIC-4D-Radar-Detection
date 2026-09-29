@@ -44,9 +44,8 @@ RUN ln -sf /usr/local/cuda-11.8/targets/x86_64-linux/lib/libnvrtc.so.11.2 \
 ENV LD_LIBRARY_PATH=/usr/local/cuda-11.8/targets/x86_64-linux/lib
 
 # 默认：对挂载的数据集做超激进 NMS 推理（可用 docker run 覆盖任意命令）
-CMD ["python3", "sfa/testing_export_ultra_aggressive.py", \
+CMD ["python3", "sfa/eval.py", \
      "--pretrained_path", "./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth", \
      "--dataset-dir", "/data/DRadDataset", \
-     "--saved_fn", "sfa4d_163_ultra_aggressive", \
      "--peak_thresh", "0.25", "--nms_thresh", "0.2", "--gpu_idx", "0", \
-     "--output-dir", "./results/sfa4d_163_ultra_aggressive"]
+     "--output-dir", "./results/sfa4d_163_eval"]

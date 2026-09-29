@@ -1,8 +1,15 @@
 # SFA4D — 4D 毫米波雷达点云 3D 目标检测（基于 SFA3D）
 
 > **一句话**：基于 SFA3D 的 4D 毫米波雷达点云 3D 检测——原创 8D→4D SNR 映射与跨类别 NMS，网络结构沿用 SFA3D 原版
-> **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· ONNX 量化后 13 MB
-> **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) 下载）；数据集需自备。指令见 [启动训练指令.md](启动训练指令.md) · [启动推理指令（kitti格式预测结果）.md](启动推理指令（kitti格式预测结果）.md) · [启动可视化指令.md](启动可视化指令.md)，或直接用 [Docker](#-docker-复现)
+> **成绩**：AIC 2025 全球校园人工智能算法精英大赛 **全国二等奖** · 75 mAP@0.5 · 110.73 FPS（RTX 4060 Ti）· INT8 量化后 12.3 MB
+> **怎么跑**：163 轮权重已随仓库分发（`checkpoints/` + `onnx_models/`，也可从 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) 下载）。无需自备数据集即可跑通 3 样本演示（`sample_data/` 随仓库分发）：
+>
+> ```bash
+> docker build -t sfa4d . && docker run --rm --gpus all \
+>     -v $PWD/sample_data:/data/DRadDataset -v $PWD/results:/app/results sfa4d
+> ```
+>
+> 完整数据集需按赛题官方渠道自备；命令文档见 [docs/操作指令/](docs/操作指令/)，或 [Docker 复现](#-docker-复现)
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0](https://img.shields.io/badge/PyTorch-2.0-red.svg)](https://pytorch.org/)
@@ -34,13 +41,13 @@
 
 | 内容 | 状态 | 位置 |
 |------|------|------|
-| 163 轮权重 `.pth`（48.57 MB） | ✅ 已随仓库分发 | `checkpoints/sfa3d_8d_full_300epochs/` |
+| 163 轮权重 `.pth`（48.65 MB） | ✅ 已随仓库分发 | `checkpoints/sfa3d_8d_full_300epochs/` |
 | FP32 ONNX（48.57 MB） | ✅ 已随仓库分发 | `onnx_models/sfa3d_163_fp32.onnx` |
-| 示例数据（3 个样本） | ✅ 已含 | `sample_data/`（仅供核对数据格式） |
+| 示例数据（3 个样本） | ✅ 已含 | `sample_data/`（training + testing 分割；可跑 Docker 演示） |
 | **DRadDataset 数据集** | ❌ 不随仓库分发 | 按赛题官方渠道自备（KITTI 格式：`ImageSets/ training/ testing/`） |
 | INT8 动态量化 ONNX（12.27 MB） | ✅ 已随仓库分发 | `quantized_models/sfa3d_163_int8.onnx`（实测与 FP32 检测一致） |
 
-环境以 [requirements.txt](requirements.txt) 与三份启动指令文档为准（Python 3.8 + PyTorch 2.0.0+cu118）；环境安装见下方「快速开始」，或直接用 Docker。
+环境以 [requirements.txt](requirements.txt) 与 [docs/操作指令/](docs/操作指令/)（训练/推理/可视化命令）为准（Python 3.8 + PyTorch 2.0.0+cu118）；环境安装见下方「快速开始」，或直接用 Docker。
 
 ---
 
@@ -51,7 +58,7 @@
 | **竞赛奖项** | AIC 全球校园人工智能算法精英大赛 · 算法挑战赛 **全国二等奖** |
 | **推理速度** | **110.73 FPS**（RTX 4060 Ti，PyTorch FP32） |
 | **检测精度** | **75% mAP@0.5** |
-| **模型体积** | 48.57 MB（`.pth` / FP32 ONNX）；INT8 动态量化后 **12.27 MB**（-74.7%，`quantized_models/sfa3d_163_int8.onnx`，实测 3 样本检测与 FP32 一致） |
+| **模型体积** | 48.65 MB（`.pth`）/ 48.57 MB（FP32 ONNX）；INT8 动态量化后 **12.27 MB**（-74.7%，`quantized_models/sfa3d_163_int8.onnx`，实测 3 样本检测与 FP32 一致） |
 | **跨平台推理** | 5.48 FPS（ONNX Runtime，CPU） |
 | **验证样本** | 成功处理 1034 个验证样本，检测率 20.7% |
 
@@ -66,24 +73,26 @@ SFA4D/
 │   ├── data_process/             # 数据处理（Dataset、BEV 生成、8D→4D 映射）
 │   ├── models/                   # 模型定义（FPN-ResNet + KFPN）
 │   ├── losses/                   # 损失函数（FocalLoss + L1Loss + BalancedL1Loss）
-│   ├── utils/                    # 工具函数（NMS、可视化、训练辅助）
-│   └── *.py                      # 训练/推理/导出脚本
+│   ├── utils/                    # 工具函数（NMS、后处理、可视化、训练辅助）
+│   ├── legacy/                   # 实验脚本归档（含 7 个伪结果/损坏脚本，已逐个标注）
+│   ├── train.py                  # 训练入口
+│   ├── eval.py                   # 推理/评测入口（超激进 NMS 参数为默认）
+│   ├── export_to_onnx.py         # ONNX FP32 导出
+│   ├── quantize_onnx_163.py      # INT8 动态量化（含 FP32/INT8 对照验证）
+│   └── run_onnx_inference.py     # ONNX Runtime CPU 推理
+├── tests/                        # 单元测试（pytest：8D 映射 / BEV / NMS / 伪 IoU）
+├── .github/workflows/ci.yml      # CI（语法门 + 单测）
 ├── checkpoints/                  # ✅ 已分发权重
 │   └── sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth
-├── onnx_models/                  # ✅ FP32 ONNX（sfa3d_163_fp32.onnx）+ 导出/推理文档
+├── onnx_models/                  # ✅ FP32 ONNX（sfa3d_163_fp32.onnx）
 ├── quantized_models/             # ✅ INT8 动态量化 ONNX（sfa3d_163_int8.onnx，12.27 MB）
-├── sample_data/                  # 示例数据（3 个样本，仅供核对数据格式）
-│   └── training/
-│       ├── velodyne/             # 8D 雷达点云（.bin）
-│       ├── label_2/              # KITTI 格式标注（.txt）
-│       └── calib/                # 定标参数（.txt）
+├── sample_data/                  # 示例数据（3 个样本，Docker 演示可直接挂载）
+│   ├── training/                 # velodyne/ label_2/ calib/（训练冒烟）
+│   └── testing/                  # velodyne/ image_2/ calib/（推理演示）
 ├── demo/                         # 演示 gif / 图片
-├── docs/                         # 技术文档（中文）
-├── 启动训练指令.md                # 训练 / 导出 / 量化命令
-├── 启动推理指令（kitti格式预测结果）.md  # 推理命令与参数
-├── 启动可视化指令.md              # 可视化命令
+├── docs/                         # 技术文档 + 操作指令（中文）
 ├── Dockerfile / .dockerignore   # Docker 复现（仅封装最佳 .pth）
-├── requirements.txt              # 环境依赖
+├── requirements.txt / pyproject.toml   # 环境依赖
 ├── README.md                     # 本文件（中文）
 └── LICENSE                       # MIT 开源协议
 ```
@@ -113,7 +122,20 @@ pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 --index-url https://dow
 pip install -r requirements.txt
 ```
 
-### 快速体验（使用示例数据）
+### 快速体验 ①（Docker：3 样本推理演示，无需自备数据集）
+
+```bash
+docker build -t sfa4d .
+docker run --rm --gpus all \
+    -v $PWD/sample_data:/data/DRadDataset \
+    -v $PWD/results:/app/results \
+    sfa4d
+# → results/sfa4d_163_eval/{000040,000050,000055}.txt（KITTI 格式检测框）
+```
+
+> 无 GPU 环境改用：`docker run --rm -v $PWD/sample_data:/data/DRadDataset -v $PWD/results:/app/results sfa4d python3 sfa/eval.py --dataset-dir /data/DRadDataset --no_cuda`（默认权重路径已内置，无需传 `--pretrained_path`）
+
+### 快速体验 ②（本机环境：训练冒烟）
 
 ```bash
 # 单 GPU 快速训练（3 epoch，用于验证环境）
@@ -145,16 +167,17 @@ python sfa/train.py \
 ### 推理（使用已分发模型）
 
 ```bash
-# 超激进 NMS 推理（推荐，用于验证/测试）
-python sfa/testing_export_ultra_aggressive.py \
+# 正式推理入口（超激进 NMS 参数即为默认值；原竞赛脚本归档于 sfa/legacy/）
+python sfa/eval.py \
     --pretrained_path ./checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth \
     --dataset-dir ./DRadDataset \
-    --saved_fn sfa4d_163_ultra \
     --peak_thresh 0.25 \
     --nms_thresh 0.2 \
     --gpu_idx 0 \
-    --output-dir ./results/sfa4d_163_ultra
+    --output-dir ./results/sfa4d_163_eval
 ```
+
+> 单元测试：`pip install pytest` 后在仓库根目录执行 `pytest tests`（详见 [.github/workflows/ci.yml](.github/workflows/ci.yml)）。
 
 ---
 
@@ -164,19 +187,25 @@ python sfa/testing_export_ultra_aggressive.py \
 
 **实测**（RTX 4060 Ti / WSL2）：镜像约 4.9 GB；挂载完整数据集跑默认推理命令，20 样本 2.53 s（7.91 FPS，含 9p 挂载 I/O），单样本 GPU 推理 ~10-17 ms，输出标准 KITTI 预测文件。
 
-> ⚠️ 挂载的数据集须含 `testing/{velodyne, image_2, calib}`——推理脚本的 DataLoader 依赖 image_2 目录定位样本（图片本身不进网络，本项目为雷达单模态）；国内构建可自行在 Dockerfile 中保留清华源配置（apt/pip 已默认换源）。
+> ⚠️ 挂载的数据集须含 `testing/{velodyne, image_2, calib}`（默认 `--test-subdir testing`）：样本发现是枚举 `velodyne/*.bin`；但 test 模式仍会读取 `image_2` 的 PNG（图片不进网络，本项目为雷达单模态，缺失会导致 cv2 报错），calib 路径与输出文件名由 image_2 路径推导。国内构建可自行在 Dockerfile 中保留清华源配置（apt/pip 已默认换源）。
 
 ```bash
 # 构建镜像
 docker build -t sfa4d .
 
-# ① 默认命令：对挂载的数据集跑超激进 NMS 推理（结果目录建议挂载出来）
+# ⓪ 三样本演示（无需自备数据集；sample_data/ 随仓库分发）
+docker run --rm --gpus all \
+    -v $PWD/sample_data:/data/DRadDataset \
+    -v $PWD/results:/app/results \
+    sfa4d
+
+# ① 默认命令：对挂载的完整数据集跑超激进 NMS 推理（结果目录建议挂载出来）
 docker run --gpus all \
     -v /path/to/DRadDataset:/data/DRadDataset \
     -v $PWD/results:/app/results \
     sfa4d
 
-# ② 进入容器执行任意命令（训练 / 评估 / 可视化）
+# ② 进入容器执行任意命令（训练 / 评估 / 可视化 / 单元测试）
 docker run --gpus all \
     -v /path/to/DRadDataset:/data/DRadDataset \
     -it sfa4d bash
@@ -203,7 +232,7 @@ docker run --gpus all \
 
 ### 数据集获取
 
-完整 DRadDataset 数据集（训练集 5168 样本 + 测试集 1384 样本）**不随仓库与 Release 分发**，请通过赛题官方渠道获取，并按 KITTI 格式放置：`DRadDataset/{ImageSets, training, testing}/`。仓库根目录的 `sample_data/`（3 个样本）仅供核对数据格式。
+完整 DRadDataset 数据集（训练集 5168 样本 + 测试集 1384 样本）**不随仓库与 Release 分发**，请通过赛题官方渠道获取，并按 KITTI 格式放置：`DRadDataset/{ImageSets, training, testing}/`。仓库根目录的 `sample_data/`（3 个样本，含 training/testing 分割）用于核对数据格式与 Docker 演示。
 
 ---
 
@@ -211,9 +240,23 @@ docker run --gpus all \
 
 | 模型 | 大小 | 说明 | 获取 |
 |------|------|------|------|
-| Epoch 163（PyTorch） | 48.57 MB | 推荐使用的最佳模型 | ✅ 仓库内 `checkpoints/sfa3d_8d_full_300epochs/`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) |
+| Epoch 163（PyTorch） | 48.65 MB | 推荐使用的最佳模型 | ✅ 仓库内 `checkpoints/sfa3d_8d_full_300epochs/`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) |
 | ONNX FP32 | 48.57 MB | 跨平台部署（CPU 可跑） | ✅ 仓库内 `onnx_models/sfa3d_163_fp32.onnx`，或 [Release v1.0](https://github.com/cainiao33/AIC-4D-Radar-Detection/releases/tag/v1.0) |
 | INT8 动态量化 ONNX | 12.27 MB | 边缘设备部署 | ✅ 仓库内 `quantized_models/sfa3d_163_int8.onnx` |
+
+<details>
+<summary><b>权重校验和（sha256，48.57→48.65 MB 的差异系 .pth 与 ONNX 序列化不同）</b></summary>
+
+```text
+checkpoints/sfa3d_8d_full_300epochs/Model_sfa3d_8d_full_300epochs_epoch_163.pth
+  51,020,173 B  b042158ee213e4acd1bd4fde51eba374194d799ec537693c52e63bf29e98c003
+onnx_models/sfa3d_163_fp32.onnx
+  50,928,757 B  9cd6f3e9b3e5eec34eeba84151717da5a7314ead72e78264259c27878bea46dd
+quantized_models/sfa3d_163_int8.onnx
+  12,866,736 B  ddffb1708bbb8cab7c3310f5ff2f1e068e56e2dacaf3a4279bd539c72faf9ba3
+```
+
+</details>
 
 ### 模型导出
 
@@ -252,7 +295,7 @@ python sfa/quantize_onnx_163.py \
 |------|------|------|------|
 | RTX 4060 Ti | PyTorch FP32 | **110.73 FPS** | GPU 推理 |
 | CPU | ONNX Runtime FP32 | 5.48 FPS | 跨平台部署（复测 5.40） |
-| CPU | ONNX Runtime INT8 | 3.23 FPS | 收益在体积（-74.7%）；x86 动态量化不提速，见《启动训练指令》量化说明 |
+| CPU | ONNX Runtime INT8 | 3.23 FPS | 收益在体积（-74.7%）；x86 动态量化不提速，见 [docs/操作指令/启动训练指令.md](docs/操作指令/启动训练指令.md) 量化说明 |
 
 ---
 
@@ -264,6 +307,7 @@ python sfa/quantize_onnx_163.py \
 | [docs/SFA3D与SFA4D源码比对报告.md](docs/SFA3D与SFA4D源码比对报告.md) | 与 SFA3D 原版的逐文件差异（诚实定位本项目改动） ⭐ |
 | [docs/技术报告.md](docs/技术报告.md) | 深度技术分析报告 |
 | [docs/项目结构说明.md](docs/项目结构说明.md) | 项目架构和文件说明 |
+| [docs/操作指令/](docs/操作指令/) | 训练 / 推理 / 可视化 / 量化命令速查 |
 | [docs/环境依赖清单.md](docs/环境依赖清单.md) | 详细环境配置要求 |
 | [docs/点云维度修改说明.md](docs/点云维度修改说明.md) | 8D→4D 映射实现细节 |
 | [docs/SFA4D 代码架构.md](docs/SFA4D%20代码架构.md) | 代码架构详解 |
@@ -371,13 +415,14 @@ heads = {
 - 感谢 **AIC 全球校园人工智能算法精英大赛** 提供的竞赛平台和数据集
 - 本项目的网络骨干、损失函数、BEV 生成等核心代码直接沿用 [SFA3D](https://github.com/maudzung/SFA3D)（作者 Nguyen Mau Dung / maudzung，MIT 协议），特此致谢并注明出处；本项目在其基础上新增数据域适配与后处理，详见比对报告
 - 感谢所有团队成员的辛勤付出
+- 仓库工程化整理（Docker 封装、单元测试、脚本归档、文档修订）由 Claude Code 协助完成，协作记录见各提交信息
 
 ---
 
 ## 📧 联系方式
 
 - 竞赛官网：[AIC 全球校园人工智能算法精英大赛](https://www.aicomp.cn/)
-- 邮箱：**2911684894@qq.com**
+- 邮箱：**webcainiao@gmail.com**
 
 ---
 
